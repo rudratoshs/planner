@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .api.routes import auth, users  # Import users route
 from .config.settings import API_V1_PREFIX, PROJECT_NAME, ALLOWED_ORIGINS
-from .utils.logging import logger
+from .utils.logger import logger
 from src.db.session import SessionLocal
 from prisma import Prisma
 
