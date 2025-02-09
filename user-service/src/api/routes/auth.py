@@ -1,6 +1,7 @@
 import redis
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from fastapi import Request
 from ...core.schemas.auth import Token, PasswordResetRequest, PasswordResetConfirm
 from ...core.schemas.user import UserCreate
 from ...core.schemas.auth import RefreshTokenRequest
@@ -27,6 +28,7 @@ from ...config.settings import (
 )
 from datetime import datetime, timedelta
 from prisma import Prisma
+from ...utils.rate_limit import is_rate_limited
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{API_V1_PREFIX}/auth/login")
@@ -47,19 +49,17 @@ redis_client = redis.StrictRedis(
 )
 RATE_LIMIT_SECONDS = 60  # Allow 1 request per minute
 
-
-def is_rate_limited(email: str) -> bool:
-    """Check if the email is rate-limited"""
-    key = f"reset_limit:{email}"
-    if redis_client.exists(key):
-        return True
-    redis_client.setex(key, RATE_LIMIT_SECONDS, "locked")
-    return False
-
-
 @router.post("/register")
 async def register_user(user_data: UserCreate, lang: str = "en"):
     """Register a new user"""
+
+    # ✅ Check rate limit
+    if is_rate_limited("register", user_data.email):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=error_response("TOO_MANY_REGISTER_ATTEMPTS", lang, 429)
+        )
+
     existing_user = await get_user_by_email(user_data.email)
     if existing_user:
         raise HTTPException(
@@ -69,7 +69,6 @@ async def register_user(user_data: UserCreate, lang: str = "en"):
 
     user = await create_user(user_data.email, user_data.password, user_data.full_name)
 
-    # Generate tokens
     access_token = create_access_token({"sub": user.email})
     refresh_token = create_refresh_token({"sub": user.email})
 
@@ -89,12 +88,20 @@ async def register_user(user_data: UserCreate, lang: str = "en"):
 
 
 @router.post("/login")
-async def login_user(email: str, password: str, lang: str = "en"):
+async def login_user(request: Request,email: str, password: str, lang: str = "en"):
     """Authenticate user and return access & refresh tokens"""
+
+    # ✅ Check rate limit
+    if is_rate_limited("login", email):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=error_response("TOO_MANY_LOGIN_ATTEMPTS", lang, 429)
+        )
+
     await expire_inactive_sessions()
     user = await authenticate_user(email, password)
 
-    if not user:  # Now `user` is a full object, not a string
+    if not user:
         await record_failed_login(email, request.client.host)
         raise HTTPException(
             status_code=400, detail=error_response("INVALID_CREDENTIALS", lang, 400)
@@ -116,7 +123,6 @@ async def login_user(email: str, password: str, lang: str = "en"):
         "LOGIN_SUCCESS",
         lang,
     )
-
 
 @router.post("/logout")
 async def logout(
@@ -176,6 +182,14 @@ async def reset_password_endpoint(request: PasswordResetConfirm, lang: str = "en
 @router.post("/refresh-token")
 async def refresh_token_endpoint(request: RefreshTokenRequest, lang: str = "en"):
     """Generate a new access token using a refresh token"""
+
+    # ✅ Check rate limit
+    if is_rate_limited("refresh_token", request.refresh_token):
+        raise HTTPException(
+            status_code=429,
+            detail=error_response("TOO_MANY_REFRESH_ATTEMPTS", lang, 429)
+        )
+
     payload = decode_access_token(request.refresh_token)
     if not payload:
         raise HTTPException(
@@ -188,7 +202,6 @@ async def refresh_token_endpoint(request: RefreshTokenRequest, lang: str = "en")
             status_code=401, detail=error_response("INVALID_REFRESH_TOKEN", lang, 401)
         )
 
-    # Generate a new access token
     new_access_token = create_access_token({"sub": user_email})
     expires_at = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
