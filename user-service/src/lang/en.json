@@ -8,5 +8,7 @@
     "USER_NOT_FOUND": "User not found.",
     "TOO_MANY_REQUESTS": "Too many requests. Try again later.",
     "PASSWORD_RESET_SUCCESS": "Password has been reset successfully.",
-    "USER_PROFILE_FETCHED": "User profile fetched successfully."
+    "USER_PROFILE_FETCHED": "User profile fetched successfully.",
+    "TOKEN_REFRESH_SUCCESS": "Access token refreshed successfully.",
+    "INVALID_REFRESH_TOKEN": "Invalid or expired refresh token."
 }

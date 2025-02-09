@@ -8,5 +8,7 @@
     "USER_NOT_FOUND": "Usuario no encontrado.",
     "TOO_MANY_REQUESTS": "Demasiadas solicitudes. Inténtelo de nuevo más tarde.",
     "PASSWORD_RESET_SUCCESS": "La contraseña ha sido restablecida con éxito.",
-    "USER_PROFILE_FETCHED": "Perfil de usuario obtenido con éxito."
+    "USER_PROFILE_FETCHED": "Perfil de usuario obtenido con éxito.",
+    "TOKEN_REFRESH_SUCCESS": "El token de acceso ha sido renovado con éxito.",
+    "INVALID_REFRESH_TOKEN": "El token de actualización no es válido o ha caducado."
 }

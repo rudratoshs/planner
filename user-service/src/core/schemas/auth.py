@@ -10,3 +10,6 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirm(BaseModel):
     token: str
     new_password: str
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str

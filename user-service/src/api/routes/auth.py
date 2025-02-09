@@ -3,10 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from ...core.schemas.auth import Token, PasswordResetRequest, PasswordResetConfirm
 from ...core.schemas.user import UserCreate
+from ...core.schemas.auth import RefreshTokenRequest
 from ...core.services.user_service import create_user, get_user_by_email
 from ...core.services.auth_service import authenticate_user
 from ...core.services.password_reset_service import generate_password_reset_token, reset_password
-from ...utils.security import blacklist_token,create_access_token, create_refresh_token
+from ...utils.security import blacklist_token,create_access_token, create_refresh_token,decode_access_token
 from ...utils.response import success_response, error_response
 from ...config.settings import API_V1_PREFIX, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD,ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import datetime, timedelta
@@ -106,3 +107,28 @@ async def reset_password_endpoint(request: PasswordResetConfirm, lang: str = "en
         raise HTTPException(status_code=400, detail=error_response("INVALID_OR_EXPIRED_TOKEN", lang, 400))
     
     return success_response(None, "PASSWORD_RESET_SUCCESS", lang)
+
+@router.post("/refresh-token")
+async def refresh_token_endpoint(request: RefreshTokenRequest, lang: str = "en"):
+    """Generate a new access token using a refresh token"""
+    payload = decode_access_token(request.refresh_token)
+    if not payload:
+        raise HTTPException(status_code=401, detail=error_response("INVALID_REFRESH_TOKEN", lang, 401))
+
+    user_email = payload.get("sub")
+    if not user_email:
+        raise HTTPException(status_code=401, detail=error_response("INVALID_REFRESH_TOKEN", lang, 401))
+
+    # Generate a new access token
+    new_access_token = create_access_token({"sub": user_email})
+    expires_at = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    return success_response(
+        {
+            "access_token": new_access_token,
+            "token_type": "bearer",
+            "expires_at": expires_at.isoformat() + "Z"
+        },
+        "TOKEN_REFRESH_SUCCESS",
+        lang
+    )
