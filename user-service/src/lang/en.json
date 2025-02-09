@@ -10,5 +10,8 @@
     "PASSWORD_RESET_SUCCESS": "Password has been reset successfully.",
     "USER_PROFILE_FETCHED": "User profile fetched successfully.",
     "TOKEN_REFRESH_SUCCESS": "Access token refreshed successfully.",
-    "INVALID_REFRESH_TOKEN": "Invalid or expired refresh token."
+    "INVALID_REFRESH_TOKEN": "Invalid or expired refresh token.",
+    "INVALID_EMAIL_FORMAT": "The email format is incorrect. Please provide a valid email address.",
+    "PASSWORD_TOO_SHORT": "Password must be at least 8 characters long.",
+    "VALIDATION_FAILED": "Validation failed. Please check your input."
 }

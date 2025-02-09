@@ -50,3 +50,13 @@ model failed_login_attempt {
   ip        String
   timestamp DateTime @default(now())
 }
+
+model audit_log {
+  id         String   @id @default(uuid())
+  user_id    String?  @db.Uuid
+  action     String
+  details    String?
+  ip_address String?
+  user_agent String?
+  timestamp  DateTime @default(now())
+}
