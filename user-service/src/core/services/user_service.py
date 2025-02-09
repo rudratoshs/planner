@@ -4,7 +4,6 @@ from prisma import Prisma
 
 db = Prisma()
 
-
 async def get_user_by_email(email: str):
     if not db.is_connected():  # ✅ Ensure Prisma is connected
         await db.connect()

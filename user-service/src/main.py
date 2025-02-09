@@ -1,7 +1,6 @@
-# src/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .api.routes import auth  # Add auth here
+from .api.routes import auth, users  # Import users route
 from .config.settings import API_V1_PREFIX, PROJECT_NAME, ALLOWED_ORIGINS
 from .utils.logging import logger
 from src.db.session import SessionLocal
@@ -25,6 +24,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router, prefix=API_V1_PREFIX)
+app.include_router(users.router, prefix=API_V1_PREFIX)  # Add users router
 
 @app.on_event("startup")
 async def startup():
