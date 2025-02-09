@@ -9,6 +9,7 @@ from ..config.settings import (
     REDIS_HOST,
     REDIS_PORT,
     REDIS_PASSWORD,
+    ACCESS_TOKEN_EXPIRE_MINUTES
 )
 import redis
 
@@ -56,3 +57,10 @@ def decode_access_token(token: str):
 def blacklist_token(token: str, expiration: int = ACCESS_TOKEN_EXPIRE_MINUTES * 60):
     """Store token in Redis blacklist"""
     redis_client.setex(token, expiration, "blacklisted")
+
+def create_refresh_token(data: dict, expires_delta: timedelta = None):
+    """Generate a new refresh token (longer expiration)"""
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(days=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)

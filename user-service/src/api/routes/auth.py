@@ -6,7 +6,7 @@ from ...core.schemas.user import UserCreate
 from ...core.services.user_service import create_user, get_user_by_email
 from ...core.services.auth_service import authenticate_user
 from ...core.services.password_reset_service import generate_password_reset_token, reset_password
-from ...utils.security import blacklist_token
+from ...utils.security import blacklist_token,create_access_token, create_refresh_token
 from ...utils.response import success_response, error_response
 from ...config.settings import API_V1_PREFIX, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD,ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import datetime, timedelta
@@ -34,13 +34,17 @@ async def register_user(user_data: UserCreate, lang: str = "en"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_response("EMAIL_ALREADY_REGISTERED", lang, 400))
 
     user = await create_user(user_data.email, user_data.password, user_data.full_name)
-    token = await authenticate_user(user.email, user_data.password)
+    
+    # Generate tokens
+    access_token = create_access_token({"sub": user.email})
+    refresh_token = create_refresh_token({"sub": user.email})
 
     expires_at = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     return success_response(
         {
-            "access_token": token,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer",
             "expires_at": expires_at.isoformat() + "Z",
             "user": {
@@ -52,13 +56,32 @@ async def register_user(user_data: UserCreate, lang: str = "en"):
         lang
     )
 
-@router.post("/login", response_model=Token)
 async def login_user(email: str, password: str, lang: str = "en"):
-    token = await authenticate_user(email, password)
-    if not token:
+    """Authenticate user and return access & refresh tokens"""
+    user = await authenticate_user(email, password)
+    if not user:
         raise HTTPException(status_code=400, detail=error_response("INVALID_CREDENTIALS", lang, 400))
+
+    # Generate tokens
+    access_token = create_access_token({"sub": user.email})
+    refresh_token = create_refresh_token({"sub": user.email})
     
-    return success_response({"access_token": token, "token_type": "bearer"}, "LOGIN_SUCCESS", lang)
+    expires_at = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    return success_response(
+        {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "expires_at": expires_at.isoformat() + "Z",
+            "user": {
+                "id": user.id,
+                "email": user.email
+            }
+        },
+        "LOGIN_SUCCESS",
+        lang
+    )
 
 @router.post("/logout")
 async def logout(token: str = Depends(oauth2_scheme), lang: str = "en"):
