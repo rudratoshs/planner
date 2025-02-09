@@ -1,0 +1,12 @@
+{
+    "USER_REGISTERED_SUCCESS": "User registered successfully.",
+    "INVALID_CREDENTIALS": "Invalid email or password.",
+    "LOGOUT_SUCCESS": "Logged out successfully.",
+    "EMAIL_ALREADY_REGISTERED": "Email is already registered.",
+    "PASSWORD_RESET_SENT": "Password reset instructions sent to your email.",
+    "INVALID_OR_EXPIRED_TOKEN": "Invalid or expired token.",
+    "USER_NOT_FOUND": "User not found.",
+    "TOO_MANY_REQUESTS": "Too many requests. Try again later.",
+    "PASSWORD_RESET_SUCCESS": "Password has been reset successfully.",
+    "USER_PROFILE_FETCHED": "User profile fetched successfully."
+}

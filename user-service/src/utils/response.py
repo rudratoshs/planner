@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from typing import Any, Optional, Dict
 from .translator import translate
 
-
 class SuccessResponse(BaseModel):
     status: str = "success"
     code: int

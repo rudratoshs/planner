@@ -1,0 +1,12 @@
+{
+    "USER_REGISTERED_SUCCESS": "Usuario registrado con éxito.",
+    "INVALID_CREDENTIALS": "Correo electrónico o contraseña no válidos.",
+    "LOGOUT_SUCCESS": "Cierre de sesión exitoso.",
+    "EMAIL_ALREADY_REGISTERED": "El correo electrónico ya está registrado.",
+    "PASSWORD_RESET_SENT": "Las instrucciones de restablecimiento de contraseña han sido enviadas a su correo electrónico.",
+    "INVALID_OR_EXPIRED_TOKEN": "Token inválido o expirado.",
+    "USER_NOT_FOUND": "Usuario no encontrado.",
+    "TOO_MANY_REQUESTS": "Demasiadas solicitudes. Inténtelo de nuevo más tarde.",
+    "PASSWORD_RESET_SUCCESS": "La contraseña ha sido restablecida con éxito.",
+    "USER_PROFILE_FETCHED": "Perfil de usuario obtenido con éxito."
+}
