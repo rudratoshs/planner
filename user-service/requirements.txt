@@ -12,3 +12,4 @@ email-validator==2.1.0.post1     # for email validation
 PyJWT==2.8.0                     # Add this for JWT
 bcrypt==4.0.1
 prisma
+pytz

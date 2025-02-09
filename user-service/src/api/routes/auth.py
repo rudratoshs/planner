@@ -1,3 +1,4 @@
+import redis
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from ...core.schemas.auth import Token
@@ -8,9 +9,22 @@ from ...core.services.password_reset_service import generate_password_reset_toke
 from ...core.schemas.auth import PasswordResetRequest, PasswordResetConfirm
 from ...utils.security import blacklist_token
 from ...config.settings import API_V1_PREFIX
+from ...config.settings import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/{API_V1_PREFIX}/auth/login")
+
+# Initialize Redis connection
+redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, decode_responses=True)
+RATE_LIMIT_SECONDS = 60  # Allow 1 request per minute
+
+def is_rate_limited(email: str) -> bool:
+    """ Check if the email is rate-limited """
+    key = f"reset_limit:{email}"
+    if redis_client.exists(key):
+        return True
+    redis_client.setex(key, RATE_LIMIT_SECONDS, "locked")
+    return False
 
 @router.post("/register", response_model=Token)
 async def register_user(user_data: UserCreate):
@@ -34,11 +48,14 @@ async def logout(token: str = Depends(oauth2_scheme)):
 
 @router.post("/request-password-reset")
 async def request_password_reset(request: PasswordResetRequest):
-    reset_token = await generate_password_reset_token(request.email)
-    if not reset_token:
+    if is_rate_limited(request.email):
+        raise HTTPException(status_code=429, detail="Too many requests. Try again later.")
+
+    success = await generate_password_reset_token(request.email)
+    if not success:
         raise HTTPException(status_code=404, detail="User not found")
     
-    return {"message": "Password reset token generated", "token": reset_token}
+    return {"message": "Password reset token sent"}
 
 @router.post("/reset-password")
 async def reset_password_endpoint(request: PasswordResetConfirm):
