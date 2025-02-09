@@ -8,18 +8,19 @@ db = Prisma()
 
 
 async def authenticate_user(email: str, password: str):
-    if not db.is_connected():  # ✅ Ensure Prisma is connected
+    if not db.is_connected():
         await db.connect()
 
     db_user = await db.user.find_unique(where={"email": email})
 
     if not db_user or not verify_password(password, db_user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
-        )
+        return None 
 
-    token = create_access_token(
-        data={"sub": db_user.email},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
-    )
-    return token
+    return db_user
+
+async def record_failed_login(email: str, ip: str):
+    """Track failed login attempts"""
+    if not db.is_connected():
+        await db.connect()
+
+    await db.failed_login_attempt.create(data={"email": email, "ip": ip})

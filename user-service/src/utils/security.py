@@ -1,4 +1,5 @@
 import jwt
+from prisma import Prisma
 from jwt.exceptions import ExpiredSignatureError, PyJWTError
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
@@ -9,9 +10,10 @@ from ..config.settings import (
     REDIS_HOST,
     REDIS_PORT,
     REDIS_PASSWORD,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES,
 )
 import redis
+db = Prisma()
 
 # Connect to Redis
 redis_client = redis.StrictRedis(
@@ -58,9 +60,25 @@ def blacklist_token(token: str, expiration: int = ACCESS_TOKEN_EXPIRE_MINUTES * 
     """Store token in Redis blacklist"""
     redis_client.setex(token, expiration, "blacklisted")
 
+
 def create_refresh_token(data: dict, expires_delta: timedelta = None):
     """Generate a new refresh token (longer expiration)"""
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(days=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(days=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
+async def expire_inactive_sessions():
+    """Expire sessions that have been inactive for too long."""
+    if not db.is_connected():
+        await db.connect()
+
+    expiration_time = datetime.utcnow() - timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    await db.user_session.update_many(
+        where={"last_active": {"lt": expiration_time}, "logout_at": None},
+        data={"logout_at": datetime.utcnow()},
+    )

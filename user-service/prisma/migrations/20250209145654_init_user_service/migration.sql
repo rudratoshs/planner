@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "user" (
-    "id" TEXT NOT NULL,
+    "id" UUID NOT NULL,
     "email" TEXT NOT NULL,
     "password_hash" TEXT NOT NULL,
     "full_name" TEXT,
@@ -16,10 +16,12 @@ CREATE TABLE "user" (
 
 -- CreateTable
 CREATE TABLE "user_session" (
-    "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "id" UUID NOT NULL,
+    "user_id" UUID NOT NULL,
     "session_token" TEXT NOT NULL,
     "expires_at" TIMESTAMP(3) NOT NULL,
+    "logout_at" TIMESTAMP(3),
+    "last_active" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "user_session_pkey" PRIMARY KEY ("id")
 );
@@ -27,11 +29,22 @@ CREATE TABLE "user_session" (
 -- CreateTable
 CREATE TABLE "password_reset_token" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
     "token" TEXT NOT NULL,
     "expires_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "password_reset_token_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "failed_login_attempt" (
+    "id" UUID NOT NULL,
+    "user_id" UUID,
+    "email" TEXT NOT NULL,
+    "ip" TEXT NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "failed_login_attempt_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
